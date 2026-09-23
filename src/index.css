@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Notion 风暖白底 + 低饱和深蓝主色 */
+  --color-canvas: #fffefb;
+  --color-card: #fffefb;
+
+  --color-brand-50: #f3f6fb;
+  --color-brand-100: #e6edf6;
+  --color-brand-200: #c8d6e8;
+  --color-brand-300: #9db6d4;
+  --color-brand-400: #6c8fbb;
+  --color-brand-500: #45679c;
+  --color-brand-600: #2f4d7d;
+  --color-brand-700: #243e66;
+  --color-brand-800: #1f3a5f;
+  --color-brand-900: #172c47;
+
+  --color-good: #3f8f6b;
+  --color-warn: #d0822f;
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial,
+    sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: #2b2f36;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 细滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d8dde5 transparent;
+}
+
+@keyframes aipm-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: aipm-fade-up 0.35s ease both;
+}
+
+@keyframes aipm-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.typing-cursor::after {
+  content: '▍';
+  margin-left: 1px;
+  animation: aipm-blink 1s step-end infinite;
+  color: var(--color-brand-500);
+}
