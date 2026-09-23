@@ -34,6 +34,11 @@ export default function ResultPage() {
   const [aiOpen, setAiOpen] = useState(false);
   const [trendOpen, setTrendOpen] = useState(false);
   const [wrongOpen, setWrongOpen] = useState(false);
+  const [wrongDim, setWrongDim] = useState<DimensionId | null>(null);
+  const openWrong = (dimId: DimensionId | null = null) => {
+    setWrongDim(dimId);
+    setWrongOpen(true);
+  };
   const [explainDim, setExplainDim] = useState<DimensionId | null>(null);
   const [booted, setBooted] = useState(false);
 
@@ -86,6 +91,16 @@ export default function ResultPage() {
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  // 各维度错题数（用于诊断卡片角标）
+  const wrongMap = useMemo(() => {
+    const map = Object.fromEntries(DIMENSIONS.map((d) => [d.id, 0])) as Record<DimensionId, number>;
+    session?.records.forEach((r) => {
+      if (!r.correct) map[r.dimension]++;
+    });
+    return map;
+  }, [session]);
+  const totalWrong = session ? session.records.filter((r) => !r.correct).length : 0;
 
   const comparison = buildComparison(prev, latest);
   const deltaMap = useMemo(() => {
@@ -254,7 +269,7 @@ export default function ResultPage() {
             <p className={`mt-1 text-sm ${banner.tone === 'brand' ? 'text-white/85' : 'text-gray-600'}`}>{banner.body}</p>
             {banner.action && (
               <button
-                onClick={() => setWrongOpen(true)}
+                onClick={() => openWrong(null)}
                 className="mt-3 rounded-md border border-orange-300 bg-white px-4 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-50"
               >
                 {banner.action}
@@ -333,6 +348,18 @@ export default function ResultPage() {
           </div>
         </section>
 
+        {/* 错题回看入口（明显样式） */}
+        {session && (
+          <div className="mt-5 text-center">
+            <button
+              onClick={() => openWrong(null)}
+              className="rounded-lg border border-orange-300 bg-white px-6 py-2.5 text-sm font-semibold text-orange-700 shadow-sm hover:bg-orange-50"
+            >
+              查看本次错题（{totalWrong} 道）
+            </button>
+          </div>
+        )}
+
         {/* 单快照引导 / 对比关键数字 */}
         {snaps.length === 1 ? (
           <section className="mt-6 rounded-lg border border-dashed border-brand-300 bg-brand-50/60 px-6 py-6 text-center">
@@ -407,7 +434,7 @@ export default function ResultPage() {
 
         {/* 诊断卡片：仅本次会话有逐题记录时可生成 */}
         {session && results ? (
-          <section className="mt-10">
+          <section id="diagnosis" className="mt-10 scroll-mt-6">
             <h2 className="mb-4 text-lg font-bold text-gray-900">针对性诊断与学习资源</h2>
             <div className="space-y-4">
               {DIMENSIONS.map((meta) => (
@@ -416,11 +443,13 @@ export default function ResultPage() {
                   dim={meta}
                   score={scoreMap[meta.id]}
                   count={countMap[meta.id]}
+                  wrongCount={wrongMap[meta.id]}
                   auto={meta.id === weakest?.id}
                   state={session}
                   settings={settings}
                   onOpenSettings={() => setAiOpen(true)}
                   onPatch={onPatch}
+                  onReviewWrong={() => openWrong(meta.id)}
                 />
               ))}
             </div>
@@ -431,24 +460,16 @@ export default function ResultPage() {
           </section>
         )}
 
-        <div className="mt-12 text-center">
-          <button
-            title="学习计划功能即将上线"
-            className="rounded-lg bg-brand-700 px-10 py-3 text-base font-semibold text-white opacity-90 hover:bg-brand-800"
-          >
-            开始你的学习计划
-          </button>
-          {session && (
-            <p className="mt-4">
-              <button
-                onClick={() => setWrongOpen(true)}
-                className="text-xs text-gray-400 underline-offset-2 hover:text-gray-600 hover:underline"
-              >
-                查看本次错题
-              </button>
-            </p>
-          )}
-        </div>
+        {session && results && (
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => document.getElementById('diagnosis')?.scrollIntoView({ behavior: 'smooth' })}
+              className="rounded-lg bg-brand-700 px-10 py-3 text-base font-semibold text-white opacity-90 hover:bg-brand-800"
+            >
+              查看诊断与学习资源
+            </button>
+          </div>
+        )}
       </main>
 
       <AISettingsModal open={aiOpen} onClose={() => setAiOpen(false)} onSaved={() => setSettings(getSettings())} />
@@ -477,7 +498,12 @@ export default function ResultPage() {
       )}
 
       {/* 错题回看 */}
-      <WrongReviewModal open={wrongOpen} records={session?.records ?? []} onClose={() => setWrongOpen(false)} />
+      <WrongReviewModal
+        open={wrongOpen}
+        records={session?.records ?? []}
+        dimensionId={wrongDim}
+        onClose={() => setWrongOpen(false)}
+      />
 
       {/* 分数构成 */}
       {explainDim && (

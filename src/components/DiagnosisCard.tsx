@@ -9,11 +9,13 @@ interface Props {
   dim: DimensionMeta;
   score: number;
   count: number;
+  wrongCount: number;
   auto: boolean;
   state: SessionState;
   settings: AiSettings | null;
   onOpenSettings: () => void;
   onPatch: (patch: Partial<SessionState>) => void;
+  onReviewWrong: () => void;
 }
 
 const KIND_STYLE: Record<string, string> = {
@@ -27,11 +29,13 @@ export default function DiagnosisCard({
   dim,
   score,
   count,
+  wrongCount,
   auto,
   state,
   settings,
   onOpenSettings,
   onPatch,
+  onReviewWrong,
 }: Props) {
   const diagnosis: CachedDiagnosis | undefined = state.diagnosisCache[dim.id];
   const resource: CachedResource | undefined = state.resourceCache[dim.id];
@@ -105,19 +109,34 @@ export default function DiagnosisCard({
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-      <button className="flex w-full items-center justify-between text-left" onClick={toggleExpand}>
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: dim.color }} />
-          <span className="font-bold text-gray-800">{dim.name}</span>
+      <div className="flex w-full items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={toggleExpand} className="flex items-center gap-2 text-left">
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: dim.color }} />
+            <span className="font-bold text-gray-800">{dim.name}</span>
+          </button>
           <span className="text-xs text-gray-400">{count} 题</span>
-        </span>
-        <span className="flex items-center gap-3">
+          {wrongCount > 0 && (
+            <button
+              type="button"
+              title="查看这个维度的错题"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReviewWrong();
+              }}
+              className="rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700 hover:bg-orange-100"
+            >
+              错 {wrongCount} 题
+            </button>
+          )}
+        </div>
+        <button onClick={toggleExpand} className="flex items-center gap-3">
           <span className="text-2xl font-bold" style={{ color }}>
             {score}分
           </span>
           <span className="text-gray-400">{expanded ? '收起 ▴' : '展开查看诊断 ▾'}</span>
-        </span>
-      </button>
+        </button>
+      </div>
 
       {expanded && (
         <div className="mt-4">

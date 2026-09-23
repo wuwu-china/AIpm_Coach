@@ -1,4 +1,4 @@
-import { QUESTIONS_BY_GID, type OptionKey } from '../data/questions';
+import { QUESTIONS_BY_GID, type DimensionId, type OptionKey } from '../data/questions';
 import { DIMENSION_MAP } from '../data/dimensions';
 import type { AnswerRecord } from '../lib/types';
 
@@ -7,14 +7,19 @@ const OPTION_KEYS: OptionKey[] = ['A', 'B', 'C', 'D'];
 export default function WrongReviewModal({
   open,
   records,
+  dimensionId = null,
   onClose,
 }: {
   open: boolean;
   records: AnswerRecord[];
+  /** 传入维度时只显示该维度错题 */
+  dimensionId?: DimensionId | null;
   onClose: () => void;
 }) {
   if (!open) return null;
-  const wrong = records.filter((r) => !r.correct);
+  const scoped = dimensionId ? records.filter((r) => r.dimension === dimensionId) : records;
+  const wrong = scoped.filter((r) => !r.correct);
+  const scopeName = dimensionId ? DIMENSION_MAP[dimensionId]?.name : '';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
@@ -23,7 +28,9 @@ export default function WrongReviewModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h3 className="text-base font-bold text-gray-900">本次错题（{wrong.length}）</h3>
+          <h3 className="text-base font-bold text-gray-900">
+            {scopeName ? `${scopeName}错题` : '本次错题'}（{wrong.length}）
+          </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="关闭">
             ✕
           </button>
